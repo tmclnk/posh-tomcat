@@ -1,0 +1,54 @@
+check_all_tomcats() {
+    for cathome in $(find_catalina_bases); do
+       check_tomcat "$cathome"         
+    done
+}
+
+find_running_tomcats() {
+    ps aux | grep 'org.apache.catalina.startup.Bootstrap start$' | awk '{print $2}'
+}
+
+find_catalina_bases(){
+    local startdir='/'
+    if [ ! -z "$1" ]; then
+        startdir="$1"
+    fi 
+
+    find "$startdir" -wholename '*conf/server.xml' 2>/dev/null -exec bash -c 'echo $(dirname $(dirname {}))' \;
+    # find $startdir -wholename '*conf/server.xml' -exec readlink -f "{}/../.." \;
+}
+
+check_tomcat() {
+    [ -z "$1" ] && return
+    local catalina_base="$1" 
+    # strip trailing slashes
+    catalina_base=$(echo "$catalina_base" | sed 's/\/\+$//g')
+
+    # listen_addrs will include the SHUTDOWN port and any listening ports;
+    # shutdown is usually listening only to 127.0.0.1
+    # local listen_addrs=$(netstat -lpn 2>/dev/null | grep "$pid/" | awk '{print $4}')
+    
+    # note that we use the PID rather than the PORT to determine if an instance is
+    # running; this is because another instance might be configured against the same
+    # port, so if we used something like lsof against the port number, we might
+    # be getting different program using that port
+
+    if [ -r "$catalina_base/conf/server.xml" ]; then
+        shutdown_port=$(xmllint --xpath 'string(/Server/@port)' "$catalina_base/conf/server.xml")
+        listen_port=$(xmllint --xpath 'string(//Connector/@port)' "$catalina_base/conf/server.xml")
+        # is it running?  if so what's the pid 
+        # pid=$(lsof -t -i ":$listen_port") 
+        info=$(ps aux | grep ".*Dcatalina.base=$catalina_base.*Bootstrap start$")
+        pid=$(echo $info | cut -f2 -d' ') 
+        [ -z "$pid" ] && pid="?"
+    else
+        echo "pid $pid: Cannot read $catalina_base/conf/server.xml" >&2
+        shutdown_port='?'
+        listen_port='?'
+        pid='?'
+    fi
+
+    printf "%6s %6s %s\n" "$pid" "$listen_port" "$catalina_base"
+   #  "$pid $catalina_base $listen_port"
+}
+
