@@ -1,7 +1,4 @@
 check_all_tomcats() {
-    # for catbase in $(find_catalina_bases); do
-    #    check_tomcat "$catbase"         
-    # done
     check_tomcat $(find_catalina_bases)
 }
 
@@ -20,7 +17,7 @@ find_catalina_bases(){
 
 check_tomcat() {
     # print header if row we have any arguments
-    [ -z "$1" ] || printf "%6s %6s %8s %8s %4s %12s %s\n" "PID" "PORT" "VSZ" "RSS" "CPU" "START" "CATALINA_BASE"
+    [ -z "$1" ] || printf "%-5s %6s %6s %8s %8s %4s %12s %s\n" "STATE" "PID" "PORT" "VSZ" "RSS" "CPU" "START" "CATALINA_BASE"
     for catalina_base in "$@"
     do
         # strip trailing slashes
@@ -65,8 +62,18 @@ check_tomcat() {
             listen_port='?'
             tcpid='?'
         fi
-
-        printf "%6s %6s %8s %8s %4s %12s %s\n" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$catalina_base"
+        
+        RED='\033[0;31m'
+        GREEN='\033[0;32m'
+        NC='\033[0m' # No Color
+        if [ "$tcpid" -eq "$tcpid" ] 2>/dev/null; then
+            status=UP 
+            color=$GREEN
+        else
+            status=DOWN
+            color=$RED
+        fi
+        printf "${color}%-5s %6s %6s %8s %8s %4s %12s %s${NC}\n" "$status" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$catalina_base"
     done
 }
 
