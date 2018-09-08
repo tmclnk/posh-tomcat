@@ -1,10 +1,11 @@
 check_all_tomcats() {
-    for cathome in $(find_catalina_bases); do
-       check_tomcat "$cathome"         
-    done
+    # for catbase in $(find_catalina_bases); do
+    #    check_tomcat "$catbase"         
+    # done
+    check_tomcat $(find_catalina_bases)
 }
 
-find_running_tomcats() {
+find_running_tomcat_pids() {
     ps aux | grep 'org.apache.catalina.startup.Bootstrap start$' | awk '{print $2}'
 }
 
@@ -15,40 +16,57 @@ find_catalina_bases(){
     fi 
 
     find "$startdir" -wholename '*conf/server.xml' 2>/dev/null -exec bash -c 'echo $(dirname $(dirname {}))' \;
-    # find $startdir -wholename '*conf/server.xml' -exec readlink -f "{}/../.." \;
 }
 
 check_tomcat() {
-    [ -z "$1" ] && return
-    local catalina_base="$1" 
-    # strip trailing slashes
-    catalina_base=$(echo "$catalina_base" | sed 's/\/\+$//g')
+    # print header if row we have any arguments
+    [ -z "$1" ] || printf "%6s %6s %8s %8s %4s %12s %s\n" "PID" "PORT" "VSZ" "RSS" "CPU" "START" "CATALINA_BASE"
+    for catalina_base in "$@"
+    do
+        # strip trailing slashes
+        catalina_base=$(echo "$catalina_base" | sed 's/\/\+$//g')
 
-    # listen_addrs will include the SHUTDOWN port and any listening ports;
-    # shutdown is usually listening only to 127.0.0.1
-    # local listen_addrs=$(netstat -lpn 2>/dev/null | grep "$pid/" | awk '{print $4}')
-    
-    # note that we use the PID rather than the PORT to determine if an instance is
-    # running; this is because another instance might be configured against the same
-    # port, so if we used something like lsof against the port number, we might
-    # be getting different program using that port
+        vsz="?"
+        rss="?"
+        pctcpu="?"
+        tcpid="?"
+        starttime="?"
+        # listen_addrs will include the SHUTDOWN port and any listening ports;
+        # shutdown is usually listening only to 127.0.0.1
+        # local listen_addrs=$(netstat -lpn 2>/dev/null | grep "$pid/" | awk '{print $4}')
+        
+        # note that we use the PID rather than the PORT to determine if an instance is
+        # running; this is because another instance might be configured against the same
+        # port, so if we used something like lsof against the port number, we might
+        # be getting different program using that port
 
-    if [ -r "$catalina_base/conf/server.xml" ]; then
-        shutdown_port=$(xmllint --xpath 'string(/Server/@port)' "$catalina_base/conf/server.xml")
-        listen_port=$(xmllint --xpath 'string(//Connector/@port)' "$catalina_base/conf/server.xml")
-        # is it running?  if so what's the pid 
-        # pid=$(lsof -t -i ":$listen_port") 
-        info=$(ps aux | grep ".*Dcatalina.base=$catalina_base.*Bootstrap start$")
-        pid=$(echo $info | cut -f2 -d' ') 
-        [ -z "$pid" ] && pid="?"
-    else
-        echo "pid $pid: Cannot read $catalina_base/conf/server.xml" >&2
-        shutdown_port='?'
-        listen_port='?'
-        pid='?'
-    fi
+        if [ -r "$catalina_base/conf/server.xml" ]; then
+            shutdown_port=$(xmllint --xpath 'string(/Server/@port)' "$catalina_base/conf/server.xml")
+            listen_port=$(xmllint --xpath 'string(//Connector/@port)' "$catalina_base/conf/server.xml")
+            info=$(ps aux | grep "$catalina_base" | grep -v grep)
+            if [ ! -z "$info" ]; then
+                tcpid=$(echo $info | cut -f2 -d' ') 
+                if command -v pmap >/dev/null 2>&1; then 
+                    kbytes=$(pmap -x $tcpid | tail -1 | awk '{print $3}')
+                    vsz=$(numfmt --to=iec-i --suffix=B  --from-unit=1000 $kbytes)
 
-    printf "%6s %6s %s\n" "$pid" "$listen_port" "$catalina_base"
-   #  "$pid $catalina_base $listen_port"
+                    kbytes=$(pmap -x $tcpid | tail -1 | awk '{print $4}')
+                    rss=$(numfmt --to=iec-i --suffix=B  --from-unit=1000 $kbytes)
+                fi
+
+                starttime=$(ps -p $tcpid -wo start | tail -1)
+                pctcpu=$(ps -p $tcpid -wo %cpu | tail -1)
+            fi
+            
+            [ -z "$tcpid" ] && tcpid="?"
+        else
+            echo "pid $tcpid: Cannot read $catalina_base/conf/server.xml" >&2
+            shutdown_port='?'
+            listen_port='?'
+            tcpid='?'
+        fi
+
+        printf "%6s %6s %8s %8s %4s %12s %s\n" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$catalina_base"
+    done
 }
 
