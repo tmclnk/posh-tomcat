@@ -31,7 +31,7 @@ function Get-TomcatStats {
 	#>
 	[CmdletBinding()]
 	param( 
-		[Parameter(Position=1)][string[]]$SshHosts
+		[Parameter(Mandatory=$true,Position=1)][string[]]$SshHosts
 	)
 
 	$script = Get-Content -Raw "$PSScriptRoot/tomcat_functions"
@@ -39,15 +39,12 @@ function Get-TomcatStats {
 	
 	$results=@()
 	foreach ($remote in $SshHosts) {
+		Write-Verbose "Checking $remote..."
 		$data=ssh $remote $script
 		$table=ConvertFrom-Csv $data
 		$table | add-member HOST $remote
-		$table
 		$results+=$table
 	}
+	return $results
 }
-
-# available properties are HOST, CPU, RSS, VSZ, PORT, STATE, CATALINA_BASE
-
-# Get-TomcatStats "tom@li50-190.members.linode.com"  | format-table -property HOST,CATALINA_BASE,STATE,RSS,VSZ,CPU,LOGSZ
 

@@ -27,9 +27,9 @@ myuser@myhost2 /home/tom/catalina1 UP    95MiB 2.4GiB 0.0 120K
 myuser@myhost2 /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K 
 #>
 [CmdletBinding()]
-param( [Parameter(Position=1)][string[]]$SshHosts)
+param( 
+	[Parameter(Position=1)][string[]]$SshHosts
+)
 Import-Module -force $PSScriptRoot/TomcatMon.psm1
-
-# Get-TomcatStats "tom@li50-190.members.linode.com"  | format-table -property HOST,CATALINA_BASE,STATE,RSS,VSZ,CPU,LOGSZ
 Get-TomcatStats $SshHosts | format-table -property HOST,CATALINA_BASE,STATE,RSS,VSZ,CPU,LOGSZ
 
