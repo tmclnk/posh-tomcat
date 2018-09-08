@@ -18,7 +18,7 @@ Make sure an ssh agent is running.  In windows that's probably something like th
 PS1> Get-Service ssh-agent
 ```
 
-On my macbook, I usually wind up having an ssh agent running via `eval $(ssh-agent -s)`, *then* I launch `pwsh`.  You can probably use Keith Dahlby's ingenious [Posh-Git](https://github.com/dahlbyk/posh-git) here. 
+On my macbook, I usually wind up having an ssh agent running via `eval $(ssh-agent -s)`, *then* I launch `pwsh`. 
 
 Add ssh keys as necessary.  
 ```
