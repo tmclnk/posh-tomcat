@@ -7,10 +7,19 @@ function Get-TomcatInfo {
 	)
 
 	$script = Get-Content -Raw "$PSScriptRoot/tomcat_functions"
+	$script += "`ncheck_all_tomcats | sed 's/\s\+/,/g'`n"
+	
+	$results=@()
 	foreach ($remote in $SshHosts) {
-		ssh $remote $script
+		$data=ssh $remote $script
+		$table=ConvertFrom-Csv $data
+		$table | add-member HOST $remote
+		$table
+		$results+=$table
 	}
-
 }
 
-Get-TomcatInfo "tom@li50-190.members.linode.com" -Verbose
+# available properties are HOST, CPU, RSS, VSZ, PORT, STATE, CATALINA_BASE
+
+Get-TomcatInfo "tom@li50-190.members.linode.com"  | format-table -property HOST,CATALINA_BASE,STATE,RSS,VSZ,CPU
+

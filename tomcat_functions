@@ -17,7 +17,7 @@ find_catalina_bases(){
 
 check_tomcat() {
 	# print header if row we have any arguments
-	[ -z "$1" ] || printf '%-5s %6s %6s %8s %8s %4s %12s %s\n' "STATE" "PID" "PORT" "VSZ" "RSS" "CPU" "START" "CATALINA_BASE"
+	[ -z "$1" ] || printf '%-5s %6s %6s %8s %8s %4s %8s %s\n' "STATE" "PID" "PORT" "VSZ" "RSS" "CPU" "START" "CATALINA_BASE"
 	for catalina_base in "$@"
 	do
 		# strip trailing slashes
@@ -49,8 +49,10 @@ check_tomcat() {
 					kbytes=$(pmap -x $tcpid | tail -1 | awk '{print $4}')
 					rss=$(numfmt --to=iec-i --suffix=B  --from-unit=1000 $kbytes)
 				fi
-
-				starttime=$(ps -p $tcpid -wo start | tail -1)
+				
+				# trim spaces from starttime because printf will shift them a column
+				# over
+				starttime=$(ps -p $tcpid -wo start | tail -1 | tr -d '[:space:]')
 				pctcpu=$(ps -p $tcpid -wo %cpu | tail -1)
 			fi
 
@@ -68,9 +70,8 @@ check_tomcat() {
 			status=DOWN
 		fi
 
-		printf '%-5s %6s %6s %8s %8s %4s %12s %s\n' "$status" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$catalina_base"
+		printf '%-5s %6s %6s %8s %8s %4s %8s %s\n' "$status" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$catalina_base"
 	done
 }
 
 
-check_all_tomcats
