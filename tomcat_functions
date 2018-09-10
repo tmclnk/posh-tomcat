@@ -21,7 +21,7 @@ find_catalina_bases(){
 
 check_tomcat() {
 	# print header if row we have any arguments
-	[ -z "$1" ] || printf '%-5s %6s %6s %8s %8s %4s %8s %8s %s\n' "STATE" "PID" "PORT" "VSZ" "RSS" "CPU" "START" "LOGSZ" "CATALINA_BASE"
+	[ -z "$1" ] || printf '%-5s %12s %12s %12s %12s %4s %8s %8s %s\n' "STATE" "PID" "PORT" "VSZ" "RSS" "CPU" "START" "LOGSZ" "CATALINA_BASE"
 	for catalina_base in "$@"
 	do
 		# strip trailing slashes
@@ -33,6 +33,7 @@ check_tomcat() {
 		tcpid="?"
 		starttime="?"
 		logsz="?"
+                listen_port="zz"
 		# listen_addrs will include the SHUTDOWN port and any listening ports;
 		# shutdown is usually listening only to 127.0.0.1
 		# local listen_addrs=$(netstat -lpn 2>/dev/null | grep "$pid/" | awk '{print $4}')
@@ -44,39 +45,43 @@ check_tomcat() {
 		if [ -r "$catalina_base/conf/server.xml" ]; then
                         # old versions of xmllint doesn't support --xpath argument, so use the shell command with "cat";
                         # if you are sure you will have xmllib2 > 2.7.7 available, you can use it here instead 
-			shutdown_port=$(xmllint --shell  "$catalina_base/conf/server.xml" <<<'cat /Server/@port' | sed '/^\/ >/d' | sed 's/[^0-9]//g' || exit 1)
-			listen_port=$(xmllint --shell "$catalina_base/conf/server.xml" <<<'cat //Connector/@port' | sed '/^\/ >/d' | sed 's/[^0-9]//g' || exit 1)
+			#shutdown_port=$(xmllint --shell  "$catalina_base/conf/server.xml" <<<'cat /Server/@port' | sed '/^\/ >/d' | sed 's/[^0-9]//g' || exit 1)
+                        listen_port=$(xmllint --shell "$catalina_base/conf/server.xml" <<<'cat //Connector/@port' | grep 'port=' | sed 's/[^0-9]//g')
+
                         if [ "$?" -ne "0" ]; then
-                            echo "$shutdown_port" >&2
+                            # echo "$shutdown_port" >&2
                             echo "$listen_port" >&2
                             echo "Error processing XML!" >&2
                             exit 1
+                        elif [[ ! $listen_port =~ ^[[:digit:]] ]]; then
+                            echo "    >Unknown listen port for $catalina_base: $listen_port " >&2
+                            listen_port="xx"
                         fi
-			logsz=$(du -h "$catalina_base/logs" | tail -1 | cut -f1)
+			logsz=$(du -h "$catalina_base/logs" | tail -1 | cut -f1 || exit 1)
+                        if [ "$?" -ne "0" ]; then
+                            logsz="?"
+                            echo "Failed to identify log size of $catalina_base" >&2
+                        elif [[ ! $logsz =~ ^[[:digit:]] ]]; then
+                            echo "Failed to identify log size of $catalina_base: $logsz" >&2
+                            logsz="?"
+                        fi 
+                        
 			info=$(ps aux | grep "$catalina_base" | grep -v grep)
 			if [[ ! -z "$info" ]]; then
-				tcpid=$(echo $info | cut -f2 -d' ') 
-				if command -v pmap >/dev/null 2>&1; then 
-					vsz=$(pmap -x $tcpid | tail -1 | awk '{print $3}')
-					rss=$(pmap -x $tcpid | tail -1 | awk '{print $4}')
+                            tcpid=$(echo $info | cut -f2 -d' ') 
+
+                            vsz=$(grep "VmSize" /proc/$tcpid/status | awk '{print $2$3}')
+                            rss=$(grep "VmRSS" /proc/$tcpid/status | awk '{print $2$3}')
                                         
-                                        if command -v numfmt >/dev/null 2>&1; then 
-                                            vsz=$(numfmt --to=iec-i --suffix=B  --from-unit=1000 $vsz)
-                                            rss=$(numfmt --to=iec-i --suffix=B  --from-unit=1000 $rss)
-                                        fi
-				fi
-				
-				# trim spaces from starttime because printf will shift them a column
-				# over
-				starttime=$(ps -p $tcpid -wo start | tail -1 | tr -d '[:space:]')
-				pctcpu=$(ps -p $tcpid -wo %cpu | tail -1)
+                            # trim spaces from starttime because printf will shift them a column over
+                            starttime=$(ps -p $tcpid -wo start | tail -1 | tr -d '[:space:]')
+                            pctcpu=$(ps -p $tcpid -wo %cpu | tail -1)
 			fi
 
 			[[ -z "$tcpid" ]] && tcpid="?"
 		else
 			echo "pid $tcpid: Cannot read $catalina_base/conf/server.xml" >&2
-			shutdown_port='?'
-			listen_port='?'
+			# shutdown_port='?'
 			tcpid='?'
 		fi
 
@@ -86,7 +91,9 @@ check_tomcat() {
 			status=DOWN
 		fi
 
-		printf '%-5s %6s %6s %8s %8s %4s %8s %8s %s\n' "$status" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$logsz" "$catalina_base"
+		# printf '%-5s %7s %12s %12s %4s %8s %10s %8s %s\n' "$status" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$logsz" "$catalina_base"
+                
+		printf '%-5s %7s %7s %12s %12s %4s %10s %8s %s\n' "$status" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$logsz" "$catalina_base" >&2
 	done
 }
 
