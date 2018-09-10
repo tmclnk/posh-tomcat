@@ -42,9 +42,13 @@ check_tomcat() {
 		# port, so if we used something like lsof against the port number, we might
 		# be getting different program using that port
 		if [ -r "$catalina_base/conf/server.xml" ]; then
-			shutdown_port=$(xmllint --xpath 'string(/Server/@port)' "$catalina_base/conf/server.xml" || echo "xpath error" >&2 && exit 1)
-			listen_port=$(xmllint --xpath 'string(//Connector/@port)' "$catalina_base/conf/server.xml" || echo "xpath error" >&2 && exit 1)
+                        # old versions of xmllint doesn't support --xpath argument, so use the shell command with "cat";
+                        # if you are sure you will have xmllib2 > 2.7.7 available, you can use it here instead 
+			shutdown_port=$(xmllint --shell  "$catalina_base/conf/server.xml" <<<'cat /Server/@port' | sed '/^\/ >/d' | sed 's/[^0-9]//g' || exit 1)
+			listen_port=$(xmllint --shell "$catalina_base/conf/server.xml" <<<'cat //Connector/@port' | sed '/^\/ >/d' | sed 's/[^0-9]//g' || exit 1)
                         if [ "$?" -ne "0" ]; then
+                            echo "$shutdown_port" >&2
+                            echo "$listen_port" >&2
                             echo "Error processing XML!" >&2
                             exit 1
                         fi
