@@ -21,7 +21,7 @@ find_catalina_bases(){
 
 check_tomcat() {
 	# print header if row we have any arguments
-	[ -z "$1" ] || printf '%-5s %12s %12s %12s %12s %4s %8s %8s %s\n' "STATE" "PID" "PORT" "VSZ" "RSS" "CPU" "START" "LOGSZ" "CATALINA_BASE"
+	[ -z "$1" ] || printf '%-5s %7s %7s %12s %12s %4s %10s %8s %s\n' "STATE" "PID" "PORT" "VSZ" "RSS" "CPU" "START" "LOGSZ" "CATALINA_BASE"
 	for catalina_base in "$@"
 	do
 		# strip trailing slashes
@@ -33,7 +33,7 @@ check_tomcat() {
 		tcpid="?"
 		starttime="?"
 		logsz="?"
-                listen_port="zz"
+                listen_port="?"
 		# listen_addrs will include the SHUTDOWN port and any listening ports;
 		# shutdown is usually listening only to 127.0.0.1
 		# local listen_addrs=$(netstat -lpn 2>/dev/null | grep "$pid/" | awk '{print $4}')
@@ -50,14 +50,14 @@ check_tomcat() {
                         listen_port=$(xmllint --shell "$catalina_base/conf/server.xml" <<<'cat //Connector' | grep http | sed 's/.*port\s*=\s*.\([0-9]\+\)..*/\1/' || exit 1)
 
                         if [ "$?" -ne "0" ]; then
-                            # echo "$shutdown_port" >&2
                             echo "$listen_port" >&2
                             echo "Error processing XML!" >&2
                             exit 1
                         elif [[ ! $listen_port =~ ^[[:digit:]] ]]; then
-                            echo "    >Unknown listen port for $catalina_base: $listen_port " >&2
+                            echo "Failed to identify listen port for $catalina_base: $listen_port " >&2
                             listen_port="?"
                         fi
+
 			logsz=$(du -h "$catalina_base/logs" | tail -1 | cut -f1 || exit 1)
                         if [ "$?" -ne "0" ]; then
                             logsz="?"
@@ -92,9 +92,8 @@ check_tomcat() {
 			status=DOWN
 		fi
 
-		# printf '%-5s %7s %12s %12s %4s %8s %10s %8s %s\n' "$status" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$logsz" "$catalina_base"
                 
-		printf '%-5s %7s %7s %12s %12s %4s %10s %8s %s\n' "$status" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$logsz" "$catalina_base" >&2
+		printf '%-5s %7s %7s %12s %12s %4s %10s %8s %s\n' "$status" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$logsz" "$catalina_base"
 	done
 }
 
