@@ -1,5 +1,9 @@
 check_all_tomcats() {
-	check_tomcat $(find_catalina_bases)
+        local startdir='/'
+        if [ -z  "$1" ]; then  
+            startdir="$1"
+        fi
+        check_tomcat $(find_catalina_bases $1)
 }
 
 find_running_tomcat_pids() {
@@ -38,18 +42,24 @@ check_tomcat() {
 		# port, so if we used something like lsof against the port number, we might
 		# be getting different program using that port
 		if [ -r "$catalina_base/conf/server.xml" ]; then
-			shutdown_port=$(xmllint --xpath 'string(/Server/@port)' "$catalina_base/conf/server.xml")
-			listen_port=$(xmllint --xpath 'string(//Connector/@port)' "$catalina_base/conf/server.xml")
+			shutdown_port=$(xmllint --xpath 'string(/Server/@port)' "$catalina_base/conf/server.xml" || echo "xpath error" >&2 && exit 1)
+			listen_port=$(xmllint --xpath 'string(//Connector/@port)' "$catalina_base/conf/server.xml" || echo "xpath error" >&2 && exit 1)
+                        if [ "$?" -ne "0" ]; then
+                            echo "Error processing XML!" >&2
+                            exit 1
+                        fi
 			logsz=$(du -h "$catalina_base/logs" | tail -1 | cut -f1)
 			info=$(ps aux | grep "$catalina_base" | grep -v grep)
 			if [[ ! -z "$info" ]]; then
 				tcpid=$(echo $info | cut -f2 -d' ') 
 				if command -v pmap >/dev/null 2>&1; then 
-					kbytes=$(pmap -x $tcpid | tail -1 | awk '{print $3}')
-					vsz=$(numfmt --to=iec-i --suffix=B  --from-unit=1000 $kbytes)
-
-					kbytes=$(pmap -x $tcpid | tail -1 | awk '{print $4}')
-					rss=$(numfmt --to=iec-i --suffix=B  --from-unit=1000 $kbytes)
+					vsz=$(pmap -x $tcpid | tail -1 | awk '{print $3}')
+					rss=$(pmap -x $tcpid | tail -1 | awk '{print $4}')
+                                        
+                                        if command -v numfmt >/dev/null 2>&1; then 
+                                            vsz=$(numfmt --to=iec-i --suffix=B  --from-unit=1000 $vsz)
+                                            rss=$(numfmt --to=iec-i --suffix=B  --from-unit=1000 $rss)
+                                        fi
 				fi
 				
 				# trim spaces from starttime because printf will shift them a column

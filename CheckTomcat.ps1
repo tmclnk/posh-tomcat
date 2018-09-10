@@ -28,7 +28,7 @@ myuser@myhost2 /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K
 #>
 [CmdletBinding()]
 param( 
-	[Parameter(Position=1)][string[]]$SshHosts
+	[Parameter(Position=1,Mandatory=$true)][string[]]$SshHosts
 )
 Import-Module -force $PSScriptRoot/TomcatMon.psm1
 Get-TomcatStats $SshHosts | format-table -property HOST,CATALINA_BASE,STATE,RSS,VSZ,CPU,LOGSZ

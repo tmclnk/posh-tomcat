@@ -31,11 +31,12 @@ function Get-TomcatStats {
 	#>
 	[CmdletBinding()]
 	param( 
-		[Parameter(Mandatory=$true,Position=1)][string[]]$SshHosts
+		[Parameter(Mandatory=$true,Position=1)][string[]]$SshHosts,
+		[string]$SearchPath
 	)
 
 	$script = Get-Content -Raw "$PSScriptRoot/tomcat_functions"
-	$script += "`ncheck_all_tomcats | sed 's/\s\+/,/g'`n"
+	$script += "`ncheck_all_tomcats $SearchPath | sed 's/\s\+/,/g'`n"
 	
 	$results=@()
 	foreach ($remote in $SshHosts) {
