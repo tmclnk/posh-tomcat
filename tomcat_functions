@@ -45,8 +45,9 @@ check_tomcat() {
 		if [ -r "$catalina_base/conf/server.xml" ]; then
                         # old versions of xmllint doesn't support --xpath argument, so use the shell command with "cat";
                         # if you are sure you will have xmllib2 > 2.7.7 available, you can use it here instead 
-			#shutdown_port=$(xmllint --shell  "$catalina_base/conf/server.xml" <<<'cat /Server/@port' | sed '/^\/ >/d' | sed 's/[^0-9]//g' || exit 1)
-                        listen_port=$(xmllint --shell "$catalina_base/conf/server.xml" <<<'cat //Connector/@port' | grep 'port=' | sed 's/[^0-9]//g')
+                        # note that using "cat" doesn't behave the same way xpath does, so we have to filter out non-AJP
+                        # ports using sed
+                        listen_port=$(xmllint --shell "$catalina_base/conf/server.xml" <<<'cat //Connector' | grep http | sed 's/.*port\s*=\s*.\([0-9]\+\)..*/\1/' || exit 1)
 
                         if [ "$?" -ne "0" ]; then
                             # echo "$shutdown_port" >&2
@@ -55,7 +56,7 @@ check_tomcat() {
                             exit 1
                         elif [[ ! $listen_port =~ ^[[:digit:]] ]]; then
                             echo "    >Unknown listen port for $catalina_base: $listen_port " >&2
-                            listen_port="xx"
+                            listen_port="?"
                         fi
 			logsz=$(du -h "$catalina_base/logs" | tail -1 | cut -f1 || exit 1)
                         if [ "$?" -ne "0" ]; then
