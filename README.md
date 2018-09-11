@@ -112,6 +112,18 @@ tom@myhost2.com /home/tom/catalina1 UP    95MiB 2.4GiB 0.0 120K
 tom@myhost2.com /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K 
 ```
 
+You use normal powershell cmdlets to sort and filter output, e.g.
+```PowerShell
+$v = Get-TomcatStats myuser@myhost.com,myuser@myhost2.com
+$v | Where-Object STATE -eq 'UP' | sort-object CPU -Descending | Format-Table
+
+HOST           STATE RSS   VSZ    CPU LOGSZ CATALINA_BASE        
+----           ----- ---   ---    --- ----- -------------       
+myuser@myhost1 UP    95MiB 2.4GiB 5.2 120K  /home/tom/catalina1 
+myuser@myhost2 UP    95MiB 2.4GiB 3.0 120K  /home/tom/catalina1 
+```
+
+
 ## Help
 ```
 NAME
