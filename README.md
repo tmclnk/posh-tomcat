@@ -3,6 +3,8 @@ This is a simple script that uses ssh-agents and powershell to aggregate simple 
 
 Basic Usage:
 ```Powershell
+PS1> Start-SshAgent
+PS1> Ssh-AddKey id_rsa
 PS1> .\CheckTomcat.ps1 tom@myhost1.com,tom@myhost2.com
 HOST            CATALINA_BASE       STATE RSS   VSZ    CPU LOGSZ
 ----            -------------       ----- ---   ---    --- -----
@@ -11,18 +13,24 @@ tom@myhost1.com /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K
 tom@myhost2.com /home/tom/catalina1 UP    95MiB 2.4GiB 0.0 120K 
 ```
 
-
 ## Using SSH Agents
-Make sure an ssh agent is running.  In windows that's probably something like this:
-```PowerShell
-PS1> Get-Service ssh-agent
+### Windows
+If you are using Windows 10 with the Windows 10 April 2018 update, you have ssh built in to your shell.  
+
+If not, you can use older (0.7.x) [Posh-Git](https://github.com/dahlbyk/posh-git) releases, which have some convenient cmdlets (namely `start-sshagent` and `ssh-addkey`).
+```
+PS1> Install-Module posh-git -Scope CurrentUser -MaximumVersion 0.9 -AllowClobber
+PS1> Start-SshAgent
+PS1> Ssh-AddKey yourkey
+PS1> .\CheckTomcat.ps1 tom@myhost1.com,tom@myhost2.com
 ```
 
-On my macbook, I usually wind up having an ssh agent running via `eval $(ssh-agent -s)`, *then* I launch `pwsh`. 
+There is additional git-related baggage here (obviously), but if you use Git, you'll want to have Posh-Git anyhow.
 
-Add ssh keys as necessary.  
+### Pageant/PuTTY
+You can pass the -ForcePutty switch to if you have your keys loaded into [Pageant](https://www.chiark.greenend.org.uk/~sgtatham/putty/).
 ```
-ssh-add path/to/id_rsa
+PS1> .\CheckTomcat.ps1 -ForcePutty tom@myhost1.com,tom@myhost2.com
 ```
 
 ## Using CheckTomcat.ps1
@@ -114,7 +122,7 @@ SYNOPSIS
 
 
 SYNTAX
-    Get-TomcatStats [-SshHosts] <String[]> [<CommonParameters>]
+    Get-TomcatStats [-SshHosts] <String[]> [-SearchPath <String>] [-ForcePutty] [<CommonParameters>]
 
 
 DESCRIPTION
@@ -127,4 +135,12 @@ DESCRIPTION
     VSZ Virtual Memory Size (total available)
     CPU pct usage at time of sample
     LOGSZ Total Size of $CATALINA_BASE/logs (human readable)
+
+
+RELATED LINKS
+
+REMARKS
+    To see the examples, type: "get-help Get-TomcatStats -examples".
+    For more information, type: "get-help Get-TomcatStats -detailed".
+    For technical information, type: "get-help Get-TomcatStats -full".
 ```

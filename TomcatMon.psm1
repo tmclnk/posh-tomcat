@@ -32,16 +32,32 @@ function Get-TomcatStats {
 	[CmdletBinding()]
 	param( 
 		[Parameter(Mandatory=$true,Position=1)][string[]]$SshHosts,
-		[string]$SearchPath
+		[string]$SearchPath,
+                [switch]$ForcePutty
 	)
 
 	$script = Get-Content -Raw "$PSScriptRoot/tomcat_functions"
 	$script += "`ncheck_all_tomcats $SearchPath | sed 's/\s\+/,/g'`n"
-	
+
+	# Allow user to force use of PuTTY, which is useful when running locally if you have
+	# ssh/scp installed but can't get ssh-add to work because you're in powershell here
+	if( $ForcePutty ){
+            Write-Verbose "Forcing use of PuTTY..."
+            $ssh = Get-Command plink 
+	 } else {
+            # Find SSH and SCP Commands, preferring "ssh" and "scp" over "plink" and "pscp"
+            @("plink", "ssh") |% {
+                if( Get-Command $_ -ErrorAction SilentlyContinue) {
+                        Write-Verbose "Using $_"
+                        $ssh=$_
+                }
+            }
+	}
+
 	$results=@()
 	foreach ($remote in $SshHosts) {
 		Write-Verbose "Checking $remote..."
-		$data=ssh $remote $script
+		$data=& $ssh $remote $script
 		$table=ConvertFrom-Csv $data
 		$table | add-member HOST $remote
 		$results+=$table
@@ -49,3 +65,4 @@ function Get-TomcatStats {
 	return $results
 }
 
+Export-ModuleMember Get-TomcatStats
