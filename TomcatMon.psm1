@@ -27,7 +27,17 @@ function Get-TomcatStats {
 	myuser@myhost1 /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K 
 	myuser@myhost2 /home/tom/catalina1 UP    95MiB 2.4GiB 0.0 120K 
 	myuser@myhost2 /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K 
+        
+        .EXAMPLE
+        $v = Get-TomcatStats myuser@myhost.com,myuser@myhost2.com
+        $v | Where-Object STATE -eq 'UP' | sort-object CPU -Descending | Format-Table
 
+	HOST           STATE RSS   VSZ    CPU LOGSZ CATALINA_BASE        
+	----           ----- ---   ---    --- ----- -------------       
+	myuser@myhost1 UP    95MiB 2.4GiB 5.2 120K  /home/tom/catalina1 
+	myuser@myhost2 UP    95MiB 2.4GiB 3.0 120K  /home/tom/catalina1 
+
+        Filter out all non-running tomcats and sort by CPU usage
 	#>
 	[CmdletBinding()]
 	param( 
