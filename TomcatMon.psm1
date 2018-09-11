@@ -24,9 +24,9 @@ function Get-TomcatStats {
 	HOST           CATALINA_BASE       STATE RSS   VSZ    CPU LOGSZ
 	----           -------------       ----- ---   ---    --- -----
 	myuser@myhost1 /home/tom/catalina1 UP    95MiB 2.4GiB 0.0 120K 
-	myuser@myhost1 /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K 
+	myuser@myhost1 /tmp/mycatalina1    DOWN                   4.0K 
 	myuser@myhost2 /home/tom/catalina1 UP    95MiB 2.4GiB 0.0 120K 
-	myuser@myhost2 /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K 
+	myuser@myhost2 /tmp/mycatalina1    DOWN                   4.0K 
         
         .EXAMPLE
         $v = Get-TomcatStats myuser@myhost.com,myuser@myhost2.com
@@ -72,6 +72,16 @@ function Get-TomcatStats {
 		$table | add-member HOST $remote
 		$results+=$table
 	}
+        
+        # swap out all the "?" in the output with ""
+        foreach ($i in $results) {  
+            $i | get-member -MemberType NoteProperty |% { 
+                $val = $i."$($_.name)"; 
+                if ($val -eq "?") { 
+                    $i."$($_.name)" = "" 
+                }  
+            } 
+        }
 	return $results
 }
 

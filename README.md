@@ -9,7 +9,7 @@ PS1> .\CheckTomcat.ps1 tom@myhost1.com,tom@myhost2.com
 HOST            CATALINA_BASE       STATE RSS   VSZ    CPU LOGSZ
 ----            -------------       ----- ---   ---    --- -----
 tom@myhost1.com /home/tom/catalina1 UP    95MiB 2.4GiB 0.0 120K 
-tom@myhost1.com /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K 
+tom@myhost1.com /tmp/mycatalina1    DOWN                   4.0K 
 tom@myhost2.com /home/tom/catalina1 UP    95MiB 2.4GiB 0.0 120K 
 ```
 
@@ -40,9 +40,9 @@ PS1> .\CheckTomcat.ps1 tom@myhost1.com,tom@myhost2.com
 HOST            CATALINA_BASE       STATE RSS   VSZ    CPU LOGSZ
 ----            -------------       ----- ---   ---    --- -----
 tom@myhost1.com /home/tom/catalina1 UP    95MiB 2.4GiB 0.0 120K 
-tom@myhost1.com /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K 
+tom@myhost1.com /tmp/mycatalina1    DOWN                   4.0K 
 tom@myhost2.com /home/tom/catalina1 UP    95MiB 2.4GiB 0.0 120K 
-tom@myhost2.com /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K 
+tom@myhost2.com /tmp/mycatalina1    DOWN                   4.0K 
 ```
 
 ## Using the Module
@@ -66,12 +66,12 @@ CATALINA_BASE : /home/tom/catalina1
 HOST          : tom@myhost1.com
 
 STATE         : DOWN
-PID           : ?
+PID           :  
 PORT          : 8080
-VSZ           : ?
-RSS           : ?
-CPU           : ?
-START         : ?
+VSZ           :  
+RSS           :  
+CPU           :  
+START         :  
 LOGSZ         : 4.0K
 CATALINA_BASE : /tmp/mycatalina1
 HOST          : tom@myhost1.com
@@ -88,12 +88,12 @@ CATALINA_BASE : /home/tom/catalina1
 HOST          : tom@myhost2.com
 
 STATE         : DOWN
-PID           : ?
+PID           :  
 PORT          : 8080
-VSZ           : ?
-RSS           : ?
-CPU           : ?
-START         : ?
+VSZ           :  
+RSS           :  
+CPU           :  
+START         :  
 LOGSZ         : 4.0K
 CATALINA_BASE : /tmp/mycatalina1
 HOST          : tom@myhost2.com
@@ -107,9 +107,9 @@ PS1> Get-TomcatStats tom@myhost1.com,tom@myhost2.com | Format-Table -Property HO
 HOST            CATALINA_BASE       STATE RSS   VSZ    CPU LOGSZ
 ----            -------------       ----- ---   ---    --- -----
 tom@myhost1.com /home/tom/catalina1 UP    95MiB 2.4GiB 0.0 120K 
-tom@myhost1.com /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K 
+tom@myhost1.com /tmp/mycatalina1    DOWN                   4.0K 
 tom@myhost2.com /home/tom/catalina1 UP    95MiB 2.4GiB 0.0 120K 
-tom@myhost2.com /tmp/mycatalina1    DOWN  ?     ?      ?   4.0K 
+tom@myhost2.com /tmp/mycatalina1    DOWN                   4.0K 
 ```
 
 You use normal powershell cmdlets to sort and filter output, e.g.
