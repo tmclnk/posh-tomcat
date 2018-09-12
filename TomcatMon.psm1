@@ -12,6 +12,8 @@ function Get-TomcatStats {
 	VSZ Virtual Memory Size (total available)
 	CPU pct usage at time of sample
 	LOGSZ Total Size of $CATALINA_BASE/logs (human readable)
+        JAVA_VERSION apparent java version of a live PID
+
 
 	.PARAMETER SshHosts
 	List of SSH-accessible hosts.  You should use an SSH Agent (ssh-agent) for these hosts to allow passwordless
