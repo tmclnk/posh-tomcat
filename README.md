@@ -64,6 +64,7 @@ START         : Sep03
 LOGSZ         : 120K
 CATALINA_BASE : /home/tom/catalina1
 HOST          : tom@myhost1.com
+JAVA_VERSION  : jdk1.8.0_162
 
 STATE         : DOWN
 PID           :  
@@ -75,6 +76,7 @@ START         :
 LOGSZ         : 4.0K
 CATALINA_BASE : /tmp/mycatalina1
 HOST          : tom@myhost1.com
+JAVA_VERSION  : 
 
 STATE         : UP
 PID           : 1048
@@ -86,6 +88,7 @@ START         : Sep03
 LOGSZ         : 120K
 CATALINA_BASE : /home/tom/catalina1
 HOST          : tom@myhost2.com
+JAVA_VERSION  : jdk1.8.0_162
 
 STATE         : DOWN
 PID           :  
@@ -97,6 +100,7 @@ START         :
 LOGSZ         : 4.0K
 CATALINA_BASE : /tmp/mycatalina1
 HOST          : tom@myhost2.com
+JAVA_VERSION  : 
 ```
 
 If you aren't further processing the input, then use `Format-Table`
@@ -115,12 +119,12 @@ tom@myhost2.com /tmp/mycatalina1    DOWN                   4.0K
 You use normal powershell cmdlets to sort and filter output, e.g.
 ```PowerShell
 $v = Get-TomcatStats myuser@myhost.com,myuser@myhost2.com
-$v | Where-Object STATE -eq 'UP' | sort-object CPU -Descending | Format-Table
+$v | Where-Object STATE -eq 'UP' | sort-object CPU -Descending | Format-Table HOST,RSS,VSZ,CPU,CATALINA_BASE
 
-HOST           STATE RSS   VSZ    CPU LOGSZ CATALINA_BASE        
-----           ----- ---   ---    --- ----- -------------       
-myuser@myhost1 UP    95MiB 2.4GiB 5.2 120K  /home/tom/catalina1 
-myuser@myhost2 UP    95MiB 2.4GiB 3.0 120K  /home/tom/catalina1 
+HOST           RSS   VSZ    CPU CATALINA_BASE        
+----           ---   ---    --- -------------       
+myuser@myhost1 95MiB 2.4GiB 5.2 /home/tom/catalina1 
+myuser@myhost2 95MiB 2.4GiB 3.0 /home/tom/catalina1 
 ```
 
 
@@ -147,6 +151,7 @@ DESCRIPTION
     VSZ Virtual Memory Size (total available)
     CPU pct usage at time of sample
     LOGSZ Total Size of $CATALINA_BASE/logs (human readable)
+    JAVA_VERSION apparent java version of a live PID
 
 
 RELATED LINKS

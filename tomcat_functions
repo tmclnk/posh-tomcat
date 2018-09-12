@@ -19,9 +19,21 @@ find_catalina_bases(){
 	find "$startdir" -wholename '*conf/server.xml' 2>/dev/null -exec bash -c 'echo $(dirname $(dirname {}))' \;
 }
 
+detect_java_version() {
+    [[ -z "$1" ]] && return
+    local pid="$1"
+    echo "looking up java version for $pid..." >&2
+    local exe=$(readlink -e /proc/$pid/exe)
+    if [[ ! -z "$exe" ]]; then
+        local java_home=$(dirname $(dirname $exe))
+        echo "java home is $java_home" >&2
+        basename $java_home
+    fi
+}
+
 check_tomcat() {
 	# print header if row we have any arguments
-	[ -z "$1" ] || printf '%-5s %7s %7s %12s %12s %4s %10s %8s %s\n' "STATE" "PID" "PORT" "VSZ" "RSS" "CPU" "START" "LOGSZ" "CATALINA_BASE"
+	[ -z "$1" ] || printf '%-5s %7s %7s %14s %14s %4s %10s %8s %8s %s\n' "STATE" "PID" "PORT" "VSZ" "RSS" "CPU" "START" "LOGSZ" "JAVA_VERSION" "CATALINA_BASE"
 	for catalina_base in "$@"
 	do
 		# strip trailing slashes
@@ -34,6 +46,7 @@ check_tomcat() {
 		starttime="?"
 		logsz="?"
                 listen_port="?"
+                java_version="?"
 		# listen_addrs will include the SHUTDOWN port and any listening ports;
 		# shutdown is usually listening only to 127.0.0.1
 		# local listen_addrs=$(netstat -lpn 2>/dev/null | grep "$pid/" | awk '{print $4}')
@@ -77,9 +90,12 @@ check_tomcat() {
                             # trim spaces from starttime because printf will shift them a column over
                             starttime=$(ps -p $tcpid -wo start | tail -1 | tr -d '[:space:]')
                             pctcpu=$(ps -p $tcpid -wo %cpu | tail -1)
+
+                            java_version=$(detect_java_version $tcpid)
 			fi
 
 			[[ -z "$tcpid" ]] && tcpid="?"
+			[[ -z "$java_version" ]] && java_version="?"
 		else
 			echo "pid $tcpid: Cannot read $catalina_base/conf/server.xml" >&2
 			# shutdown_port='?'
@@ -91,9 +107,8 @@ check_tomcat() {
 		else
 			status=DOWN
 		fi
-
                 
-		printf '%-5s %7s %7s %12s %12s %4s %10s %8s %s\n' "$status" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$logsz" "$catalina_base"
+		printf '%-5s %7s %7s %14s %14s %4s %10s %8s %8s %s\n' "$status" "$tcpid" "$listen_port" "$vsz" "$rss" "$pctcpu" "$starttime" "$logsz" "$java_version" "$catalina_base" 
 	done
 }
 
